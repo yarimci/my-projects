@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This template create EC2 instance and publish Kittens Carousel Static Website
+Resources:
+  Apachewebserver:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0022f774911c1d690
+      InstanceType: t2.micro
+      KeyName: firstkey
+      SecurityGroups:
+        - !Ref Apachewebserversecgroupnew
+      Tags:
+        - Key: Name
+          Value: !Sub  Web Server of ${AWS::StackName}
+      UserData:
+        Fn::Base64: !Sub |
+            #! /bin/bash
+            yum update -y
+            yum install httpd -y
+            FOLDER="https://raw.githubusercontent.com/"
+            cd /var/www/html
+            wget $FOLDER/index.html
+            wget $FOLDER/cat0.jpg
+            wget $FOLDER/cat1.jpg
+            wget $FOLDER/cat2.jpg
+            wget $FOLDER/cat3.png
+            systemctl start httpd
+            systemctl enable httpd
+  Apachewebserversecgroupnew:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP and SSH connection
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+Outputs:
+  Apachewebserverurl:
+    Value: !Sub
+      - http://${PublicAddress}
+      - PublicAddress: !GetAtt Apachewebserver.PublicDnsName
+    Description: URL of KCS
